@@ -1,16 +1,50 @@
-# This is a sample Python script.
+import pyowm
+from keys import open_weather_api
+import os
+import json
+import flask
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+owm = pyowm.OWM(api_key=open_weather_api)
+manager = owm.weather_manager()
+
+app = flask.Flask(__name__)
+
+def can_launch_rocket(city):
+    observation = manager.weather_at_place(city)
+    w = observation.to_dict()
+    print("\n".join("{}\t{}".format(k, v) for k, v in w.items()))
+    return observation["weather"]["clouds"] < 75
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    req = flask.request.get_json(silent=True, force=True)
+    print(f"Request {json.dumps(req, indent=4)}")
+    res = makeWebhookResult(req)
+    res = json.dumps(res, indent=4)
+    print(res)
+    r = flask.make_response(res)
+    r.headers['Content-Type'] = 'application/json'
+    return r
+
+def makeWebhookResult(req):
+    if req.get("result").get("action") != "interest":
+        return {}
+    result = req.get("result")
+    parameters = result.get("parameters")
+    city = parameters.get("city-name")
+    can_launch = can_launch_rocket(city)
+    speech = f"Niestety nie uda się wystrzelić rakietę w {city}"
+    if can_launch:
+        speech = f"Tak! Możesz teraz wystrzelić rakietę w {city}"
+    print(f"Response: {speech}")
+    return {
+        "speech": speech,
+        "displayText": speech,
+        "source": "Here"
+    }
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
 
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    port = int(os.getenv('PORT', 1345))
+    app.run(debug=True, port=port, host="0.0.0.0")
