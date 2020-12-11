@@ -1,23 +1,12 @@
-import pyowm
 from constants import *
 import os
 import json
 import flask
 
 from spacex import get_last_launch_webcast_url
-
-owm = pyowm.OWM(api_key=open_weather_api)
-manager = owm.weather_manager()
+from weather import can_launch_rocket
 
 app = flask.Flask(__name__)
-
-
-def can_launch_rocket(location):
-    a = 'Krakow,PL'
-    observation = manager.weather_at_place(location)
-    w = observation.to_dict()
-    print("\n".join("{}\t{}".format(k, v) for k, v in w.items()))
-    return observation.weather.clouds < 75
 
 
 @app.route('/webhook', methods=['POST'])
@@ -35,7 +24,7 @@ def webhook():
 def make_city_suitability_result(request):
     result = request.get("queryResult")
     parameters = result.get("parameters")
-    location = parameters.get("location")["city"] + "," + parameters.get("location")["country"]
+    location = parameters.get("city")["city"] + "," + parameters.get("country")["country"]
     can_launch = can_launch_rocket(location)
     speech = f"Niestety nie uda się wystrzelić rakietę w {location}"
     if can_launch:
@@ -68,6 +57,7 @@ def make_last_launch_url_result():
             }
         ]
     }
+
 
 def make_webhook_result(request):
     if req_of_intent(request, city_suitability_intent):
