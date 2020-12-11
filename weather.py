@@ -1,6 +1,6 @@
 import pyowm
 
-from constants import open_weather_api
+from settings import open_weather_api
 
 owm = pyowm.OWM(api_key=open_weather_api)
 manager = owm.weather_manager()

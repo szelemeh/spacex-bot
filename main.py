@@ -1,4 +1,4 @@
-from constants import *
+from settings import *
 import os
 import json
 import flask
