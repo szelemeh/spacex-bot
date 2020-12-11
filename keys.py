@@ -1,1 +1,0 @@
-open_weather_api = "9c20cbe16f79d736202b46bb215d7d4f"
