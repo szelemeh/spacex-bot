@@ -4,6 +4,8 @@ import os
 import json
 import flask
 
+from spacex import get_last_launch_webcast_url
+
 owm = pyowm.OWM(api_key=open_weather_api)
 manager = owm.weather_manager()
 
@@ -52,11 +54,32 @@ def make_city_suitability_result(request):
     }
 
 
+def make_last_launch_url_result():
+    last_launch_url = get_last_launch_webcast_url()
+    speech = f"Możesz zobaczyć ostatnie wystrzelenie pod linkiem: {last_launch_url}"
+    return {
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [
+                        speech
+                    ]
+                }
+            }
+        ]
+    }
+
 def make_webhook_result(request):
-    if request['queryResult']['intent']['name'] == city_suitability_intent:
+    if req_of_intent(request, city_suitability_intent):
         return make_city_suitability_result(request)
+    elif req_of_intent(request, last_launch_url_intent):
+        return make_last_launch_url_result()
     else:
         return {}
+
+
+def req_of_intent(req, intent):
+    return req['queryResult']['intent']['name'] == intent
 
 
 if __name__ == '__main__':
